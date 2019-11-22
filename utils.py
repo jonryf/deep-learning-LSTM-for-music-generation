@@ -20,7 +20,11 @@ def read_songs_from(file_name):
     with open(file_name, 'r') as songs_file:
         songs = songs_file.read()
 
+    song_delimiter = '<end>'
+    songs = songs.split(song_delimiter)
+    songs = [song + song_delimiter for song in songs]
 
+    return songs
 
 
 
