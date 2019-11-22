@@ -30,17 +30,19 @@ print(data_loaders)
 
 for epoch in range(EPOCHS):
     shuffle(data_loaders)
+    print("Epoch %d" % epoch )
     for song_loader in data_loaders:
-        h = (Variable(torch.zeros(1, 1, 100)), Variable(torch.zeros(1, 1, 100)))
+        model.init_h()
+        optimizer.zero_grad()
+        loss = 0
         for index, song_chunk in enumerate(song_loader, 0):
-            model.zero_grad()
             target = song_loader.get_target()
-            output, h = model(song_chunk.float(), h)
-            print(output)
-            loss = criterion(output, target)
-            print(loss)
-            loss.backward()
-            optimizer.step()
+            output = model(song_chunk.float())
+            print(target)
+
+            loss += criterion(output, target)
+        loss.backward()
+        optimizer.step()
 
     with torch.no_grad():
         pass  # TODO

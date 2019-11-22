@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
 
 torch.manual_seed(42)
 
@@ -14,9 +15,13 @@ class LSTMSimple(nn.Module):
         # Model layout
         self.lstm = nn.LSTM(input_size, hidden_size)
         self.output = nn.Linear(hidden_size, output_size)
+        self.h = None
 
-    def forward(self, sequence, h):
-        lstm_out, h = self.lstm(sequence.view(1, 1, -1), h)
+    def init_h(self):
+        self.h = (Variable(torch.zeros(1, 1, 100)), Variable(torch.zeros(1, 1, 100)))
+
+    def forward(self, sequence):
+        lstm_out, self.h = self.lstm(sequence.view(1, 1, -1), self.h)
         out = self.output(lstm_out.view(1, -1))
-        return F.softmax(out), h
+        return out # F.softmax(out)
 
