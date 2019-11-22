@@ -5,25 +5,23 @@ import torch.nn.functional as F
 
 class SlidingWindowLoader(Dataset):
     def __init__(self, data, window):
-        self.data = data
+        self.data = data #torch.tensor(data)
         self.window = window
         self.current_index = 0
 
     def __getitem__(self, index):
         self.current_index = index
-        x_data = self.data[index:index+self.window]
-        x = torch.tensor(x_data)
-        print(len(x))
-        if len(x_data) < 100:
+        x = self.data[index:index+self.window]
+        if len(x) < 100:
             x = F.pad(input=x, pad=(0, 100-len(x)), mode='constant', value=0)
         return x
 
     def __len__(self):
-        return len(self.data) - self.window - 1
+        return max(0, len(self.data) - self.window - 1)
 
     def get_target(self):
         slided_index = self.current_index + 1
-        return torch.tensor(self.data[slided_index:slided_index+1])
+        return self.data[slided_index:slided_index+self.window]
 
 
 

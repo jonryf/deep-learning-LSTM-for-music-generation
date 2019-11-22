@@ -18,10 +18,10 @@ class LSTMSimple(nn.Module):
         self.h = None
 
     def init_h(self):
-        self.h = (Variable(torch.zeros(1, 1, 100)), Variable(torch.zeros(1, 1, 100)))
+        self.h = (Variable(torch.zeros(1, 1, self.hidden_size)), Variable(torch.zeros(1, 1, self.hidden_size)))
 
     def forward(self, sequence):
-        lstm_out, self.h = self.lstm(sequence.view(1, 1, -1), self.h)
-        out = self.output(lstm_out.view(1, -1))
-        return out # F.softmax(out)
+        lstm_out, self.h = self.lstm(sequence.view(100, 1, -1), self.h)
+        out = self.output(lstm_out.view(100, 1, -1))
+        return F.log_softmax(out)
 
