@@ -16,6 +16,14 @@ def char_mapping():
     return char_to_ix, ix_to_char
 
 
+def read_songs_from(file_name):
+    with open(file_name, 'r') as songs_file:
+        songs = songs_file.read()
+
+
+
+
+
 def main():
     char_to_ix, ix_to_char = char_mapping()
     print(char_to_ix)
