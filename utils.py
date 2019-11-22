@@ -1,3 +1,27 @@
+import torch
+from torch.utils.data.dataset import Dataset
+
+
+class SlidingWindowLoader(Dataset):
+    def __init__(self, data, window):
+        self.data = data
+        self.window = window
+        self.current_index = 0
+
+    def __getitem__(self, index):
+        self.current_index = index
+        x = self.data[index:index+self.window]
+        return torch.tensor(x)
+
+    def __len__(self):
+        return len(self.data) - self.window
+
+    def get_target(self):
+        slided_index = self.current_index + 1
+        return torch.tensor(self.data[slided_index:slided_index+self.window])
+
+
+
 def char_mapping():
     """
     Mapping each unique char to an index for one-hot encoding
@@ -21,7 +45,7 @@ def read_songs_from(file_name):
         songs = songs_file.read()
 
     song_delimiter = '<end>'
-    songs = songs.split(song_delimiter)
+    songs = songs.split(song_delimiter)[:-1]
     songs = [song + song_delimiter for song in songs]
 
     return songs

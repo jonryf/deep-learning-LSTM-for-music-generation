@@ -1,9 +1,6 @@
-from random import shuffle
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data.dataset import Dataset
 
 torch.manual_seed(42)
 
@@ -18,8 +15,8 @@ class LSTMSimple(nn.Module):
         self.lstm = nn.LSTM(input_size, hidden_size)
         self.output = nn.Linear(hidden_size, output_size)
 
-    def forward(self, sequence):
-        lstm_out, _ = self.lstm(sequence.view(1, -1))
+    def forward(self, sequence, h):
+        lstm_out, h = self.lstm(sequence.view(1, 1, -1), h)
         out = self.output(lstm_out.view(1, -1))
-        return F.softmax(out)
+        return F.softmax(out), h
 
