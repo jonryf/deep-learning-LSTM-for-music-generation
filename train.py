@@ -9,50 +9,66 @@ from torch.nn import CrossEntropyLoss
 from models import LSTMSimple
 from utils import SlidingWindowLoader, read_songs_from, char_mapping
 
-EPOCHS = 2
+# Check if cuda is supported
+if torch.cuda.is_available():
+    print("CUDA supported")
+    computing_device = torch.device("cuda")
+else:
+    print("CUDA not supported")
+    computing_device = torch.device("cpu")
+
+
+def encode_songs(songs, char_to_idx):
+    """
+    Return a list of encoded songs where each char in a song is mapped to an index as in char_to_idx
+    :param songs: List[String]
+    :param char_to_idx: Dict{char -> int}
+    :return: List[Tensor]
+    """
+    songs_encoded = [0] * len(songs)
+    for i, song in enumerate(songs):
+        chars = list(song)
+        result = torch.zeros(len(chars)).to(computing_device)
+        for j, ch in enumerate(chars):
+            result[j] = char_to_idx[ch]
+        songs_encoded[i] = result
+    return songs_encoded
+
+
+def to_onehot(t):
+    """
+    Take a list of indexes and return a one-hot encoded tensor
+    :param t: 1D Tensor of indexes
+    :return: 2D Tensor
+    """
+    inputs_onehot = torch.zeros(t.shape[0], VOCAB_SIZE).to(computing_device)
+    inputs_onehot.scatter_(1, t.unsqueeze(1).long(), 1.0)  # Remember inputs is indexes, so must be integer
+    return inputs_onehot
+
+
+# Load Data
+char_to_idx, idx_to_char = char_mapping()
+songs = read_songs_from('data/train.txt')
+songs_encoded = encode_songs(songs, char_to_idx)
+
+# Initialize model
+VOCAB_SIZE = len(char_to_idx.keys())
+EPOCHS = 1
 CHUNK_SIZE = 100
 
-char_to_idx, idx_to_char = char_mapping()
-
-model = LSTMSimple(len(char_to_idx) + 1, 100, 1)
-songs = read_songs_from('data/train.txt')
-
-
-songs_encoded = []
-for song in songs:
-    result = []
-    for ch in list(song):
-        temp = [0] * (len(char_to_idx.keys()) + 1)
-        temp[char_to_idx[ch]] = 1
-        result.append(temp)
-    songs_encoded.append(result)
-
+model = LSTMSimple(VOCAB_SIZE, 100, VOCAB_SIZE)
 
 criterion = CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters())
 
-data_loaders = [SlidingWindowLoader(song, CHUNK_SIZE) for song in songs]
-
-print(data_loaders)
-
-# for epoch in range(EPOCHS):
-#     shuffle(data_loaders)
-#     print("Epoch %d" % epoch )
-#     song_n = 0
-#     for song_loader in data_loaders:
-#         model.init_h()
-#         model.zero_grad()
-#         loss = 0
-#         for index, song_chunk in enumerate(song_loader, 0):
-            #            target = song_loader.get_target()
-
 for epoch in range(EPOCHS):
     for song in songs_encoded:
+        optimizer.zero_grad()
         p = 0
         n = math.ceil(len(song) / CHUNK_SIZE)
         loss = 0
+        # Divide songs into chunks
         for mini in range(n):
-            # Get input and target
             if p + CHUNK_SIZE > len(song):
                 inputs = song[p:-1]
                 targets = song[p + 1:]
@@ -61,18 +77,22 @@ for epoch in range(EPOCHS):
                 targets = song[p + 1: p + CHUNK_SIZE + 1]
             p += CHUNK_SIZE
 
-            inputs, targets = torch.Tensor(inputs), torch.Tensor(targets)
+            # Skip if empty
+            if inputs.size()[0] == 0:
+                continue
 
+            # One-hot chunk tensor
+            inputs_onehot = to_onehot(inputs)
 
-            #(sequence_len, batch, input_size)
-            song_chunk = inputs.view(100, 1, len(char_to_idx.keys()) + 1)
-            print(song_chunk.size())
-            targets = targets.view(100, 1, len(char_to_idx.keys()) + 1)
-            output = model(song_chunk)
+            # Forward through model
+            output = model(inputs_onehot.unsqueeze(1))  # Turn input into 3D (chunk_length, batch, vocab_size)
 
-            _, index_targets = torch.max(targets, 2)
-            loss += criterion(output, targets.view(100, 94))
+            # Calculate
+            output.squeeze_(1)  # Back to 2D
+            loss += criterion(output, targets.long())
+        print(loss)
         loss.backward()
         optimizer.step()
+
     with torch.no_grad():
         pass  # TODO
