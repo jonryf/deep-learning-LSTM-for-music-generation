@@ -65,14 +65,13 @@ for epoch in range(EPOCHS):
     print("Epoch", epoch)
     training_error = []
     for i, song in enumerate(songs_encoded):
-        print("Song: ", i)
         optimizer.zero_grad()
         p = 0
         n = math.ceil(len(song) / CHUNK_SIZE)
         loss = 0
 
         # Reset H for each song
-        model.init_h()
+        model.init_h(computing_device)
 
         # Divide songs into chunks
         for mini in range(n):
@@ -99,11 +98,10 @@ for epoch in range(EPOCHS):
 
             loss += criterion(output, targets.long())
 
-            ## Detatch H
-
         training_error.append(loss.item() / n)
         loss.backward()
-
+        if i % 100 == 0:
+            print("Song: ", i, "Loss", loss.item()/n)
         optimizer.step()
     print("Training Error: ", sum(training_error) / len(training_error))
 

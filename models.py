@@ -17,13 +17,14 @@ class LSTMSimple(nn.Module):
         self.output = nn.Linear(hidden_size, output_size)
         self.h = None
 
-    def init_h(self):
+    def init_h(self, computing_device):
         # (OUTPUT, HIDDEN)
-        self.h = (Variable(torch.zeros(1, 1, self.hidden_size)), Variable(torch.zeros(1, 1, self.hidden_size)))
+        output = torch.zeros(1, 1, self.hidden_size).to(computing_device)
+        hidden = torch.zeros(1, 1, self.hidden_size).to(computing_device)
+        self.h = (output, hidden)
 
     def forward(self, sequence):
         self.h[1].detach_()
         lstm_out, self.h = self.lstm(sequence, self.h)
         out = self.output(lstm_out)
         return out
-
