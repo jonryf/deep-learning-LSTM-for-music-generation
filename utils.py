@@ -1,28 +1,32 @@
-import torch
+import math
+
 from torch.utils.data.dataset import Dataset
-import torch.nn.functional as F
 
 
 class SlidingWindowLoader(Dataset):
-    def __init__(self, data, window):
-        self.data = data #torch.tensor(data)
+    def __init__(self, data, window=100):
+        self.data = data
         self.window = window
-        self.current_index = 0
+        self.current = 0
+        self.high = self.__len__()
 
     def __getitem__(self, index):
-        self.current_index = index
-        x = self.data[index:index+self.window]
-        if len(x) < 100:
-            x = F.pad(input=x, pad=(0, 100-len(x)), mode='constant', value=0)
-        return x
+        index_pos = index * self.window
+        x = self.data[index_pos:min(len(self.data) - 1, index_pos + self.window)]
+        target = self.data[index_pos + 1:index_pos + 1 + self.window]
+        return x, target
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        self.current += 1
+        if (self.current - 1) < self.high:
+            return self.__getitem__(self.current - 1)
+        raise StopIteration
 
     def __len__(self):
-        return max(0, len(self.data) - self.window - 1)
-
-    def get_target(self):
-        slided_index = self.current_index + 1
-        return self.data[slided_index:slided_index+self.window]
-
+        return math.ceil(len(self.data) / self.window)
 
 
 def char_mapping():
@@ -31,7 +35,10 @@ def char_mapping():
     :return: Dict{char -> index}, Dict{index -> char}
     """
     file = open("data/train.txt")
-    chars = list(set(file.read()))  # TODO: Might have to tokenize <start> and <end>
+    text = file.read()
+    text = text.replace("<start>", "$")
+    text = text.replace("<end>", "%")
+    chars = list(set(text))
     file.close()
 
     vocab_size = len(chars)
@@ -46,18 +53,16 @@ def char_mapping():
 def read_songs_from(file_name):
     with open(file_name, 'r') as songs_file:
         songs = songs_file.read()
-
-    song_delimiter = '<end>'
+        songs = songs.replace("<start>", "$")
+        songs = songs.replace("<end>", "%")
+    song_delimiter = '%'
     songs = songs.split(song_delimiter)[:-1]
     songs = [song + song_delimiter for song in songs]
-
     return songs
-
 
 
 def main():
     char_to_ix, ix_to_char = char_mapping()
     print(char_to_ix)
 
-
-main()
+# main()
