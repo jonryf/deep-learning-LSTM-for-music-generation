@@ -67,7 +67,7 @@ val, val_encoded = load_data('val.txt')
 Initialize Model
 """
 VOCAB_SIZE = len(char_to_idx.keys())
-EPOCHS = 3
+EPOCHS = 15
 CHUNK_SIZE = 100
 
 model = LSTMSimple(VOCAB_SIZE, 100, VOCAB_SIZE)
@@ -125,15 +125,20 @@ for epoch in range(1, EPOCHS + 1):
     with torch.no_grad():
         print("Validating...")
         model.eval()
-        validation_song_losses = []
-        loss = 0
-        n = 0
-        for seq, target in SlidingWindowLoader(song_encoded):
-            n += 1
+        val_epoch_loss = []
 
-            # if chunk is empty
-            if len(seq) == 0:
-                continue
+        for i, song_encoded in enumerate(val_encoded):
+            # Reset H for each song
+            model.init_h(computing_device)
+
+            loss = 0
+            n = 0
+            for seq, target in SlidingWindowLoader(song_encoded):
+                n += 1
+
+                # if chunk is empty
+                if len(seq) == 0:
+                    continue
 
                 # One-hot chunk tensor
                 inputs_onehot = to_onehot(seq)
@@ -144,11 +149,11 @@ for epoch in range(1, EPOCHS + 1):
                 # Calculate
                 output.squeeze_(1)  # Back to 2D
 
-                song_loss += criterion(output, target.long())
+                loss += criterion(output, target.long())
 
-            avg_val_song_loss = song_loss.item() / n
-            validation_song_losses.append(avg_val_song_loss)
-        avg_val_songs_loss = sum(validation_song_losses) / len(validation_song_losses)
+            avg_val_song_loss = loss.item() / n
+            val_epoch_loss.append(avg_val_song_loss)
+        avg_val_songs_loss = sum(val_epoch_loss) / len(val_epoch_loss)
         validation_losses.append(avg_val_songs_loss)
 
         print(
