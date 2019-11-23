@@ -1,28 +1,32 @@
-import torch
+import math
+
 from torch.utils.data.dataset import Dataset
-import torch.nn.functional as F
 
 
 class SlidingWindowLoader(Dataset):
-    def __init__(self, data, window):
-        self.data = data #torch.tensor(data)
+    def __init__(self, data, window=100):
+        self.data = data
         self.window = window
-        self.current_index = 0
+        self.current = 0
+        self.high = self.__len__()
 
     def __getitem__(self, index):
-        self.current_index = index
-        x = self.data[index:index+self.window]
-        if len(x) < 100:
-            x = F.pad(input=x, pad=(0, 100-len(x)), mode='constant', value=0)
-        return x
+        index_pos = index * self.window
+        x = self.data[index_pos:min(len(self.data) - 1, index_pos + self.window)]
+        target = self.data[index_pos + 1:index_pos + 1 + self.window]
+        return x, target
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        self.current += 1
+        if (self.current - 1) < self.high:
+            return self.__getitem__(self.current - 1)
+        raise StopIteration
 
     def __len__(self):
-        return max(0, len(self.data) - self.window - 1)
-
-    def get_target(self):
-        slided_index = self.current_index + 1
-        return self.data[slided_index:slided_index+self.window]
-
+        return math.ceil(len(self.data) / self.window)
 
 
 def char_mapping():
@@ -52,7 +56,6 @@ def read_songs_from(file_name):
     songs = [song + song_delimiter for song in songs]
 
     return songs
-
 
 
 def main():
