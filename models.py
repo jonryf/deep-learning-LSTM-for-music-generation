@@ -18,9 +18,11 @@ class LSTMSimple(nn.Module):
         self.h = None
 
     def init_h(self):
+        # (OUTPUT, HIDDEN)
         self.h = (Variable(torch.zeros(1, 1, self.hidden_size)), Variable(torch.zeros(1, 1, self.hidden_size)))
 
     def forward(self, sequence):
+        self.h[1].detach_()
         lstm_out, self.h = self.lstm(sequence, self.h)
         out = self.output(lstm_out)
         return out

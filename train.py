@@ -53,7 +53,7 @@ songs_encoded = encode_songs(songs, char_to_idx)
 
 # Initialize model
 VOCAB_SIZE = len(char_to_idx.keys())
-EPOCHS = 1
+EPOCHS = 10
 CHUNK_SIZE = 100
 
 model = LSTMSimple(VOCAB_SIZE, 100, VOCAB_SIZE)
@@ -62,15 +62,21 @@ criterion = CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters())
 
 for epoch in range(EPOCHS):
-    for song in songs_encoded:
+    print("Epoch", epoch)
+    training_error = []
+    for i, song in enumerate(songs_encoded):
+        print("Song: ", i)
         optimizer.zero_grad()
         p = 0
         n = math.ceil(len(song) / CHUNK_SIZE)
         loss = 0
-        # Divide songs into chunks
+
+        # Reset H for each song
         model.init_h()
+
+        # Divide songs into chunks
         for mini in range(n):
-            if p + CHUNK_SIZE > len(song):
+            if p + CHUNK_SIZE + 1 > len(song):
                 inputs = song[p:-1]
                 targets = song[p + 1:]
             else:
@@ -93,9 +99,13 @@ for epoch in range(EPOCHS):
 
             loss += criterion(output, targets.long())
 
-        loss.backward(retain_graph=True)
-        print(loss)
+            ## Detatch H
+
+        training_error.append(loss.item() / n)
+        loss.backward()
+
         optimizer.step()
+    print("Training Error: ", sum(training_error) / len(training_error))
 
     with torch.no_grad():
         pass  # TODO
