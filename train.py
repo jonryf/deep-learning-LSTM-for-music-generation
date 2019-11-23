@@ -146,7 +146,7 @@ for epoch in range(1, EPOCHS + 1):
 
                 song_loss += criterion(output, target.long())
 
-            avg_val_song_loss = loss.item() / n
+            avg_val_song_loss = song_loss.item() / n
             validation_song_losses.append(avg_val_song_loss)
         avg_val_songs_loss = sum(validation_song_losses) / len(validation_song_losses)
         validation_losses.append(avg_val_songs_loss)
