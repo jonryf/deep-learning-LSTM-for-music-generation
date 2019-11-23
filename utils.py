@@ -35,7 +35,10 @@ def char_mapping():
     :return: Dict{char -> index}, Dict{index -> char}
     """
     file = open("data/train.txt")
-    chars = list(set(file.read()))  # TODO: Might have to tokenize <start> and <end>
+    text = file.read()
+    text = text.replace("<start>", "$")
+    text = text.replace("<end>", "%")
+    chars = list(set(text))
     file.close()
 
     vocab_size = len(chars)
@@ -50,11 +53,11 @@ def char_mapping():
 def read_songs_from(file_name):
     with open(file_name, 'r') as songs_file:
         songs = songs_file.read()
-
-    song_delimiter = '<end>'
+        songs = songs.replace("<start>", "$")
+        songs = songs.replace("<end>", "%")
+    song_delimiter = '%'
     songs = songs.split(song_delimiter)[:-1]
     songs = [song + song_delimiter for song in songs]
-
     return songs
 
 
@@ -62,5 +65,4 @@ def main():
     char_to_ix, ix_to_char = char_mapping()
     print(char_to_ix)
 
-
-main()
+# main()
