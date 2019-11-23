@@ -84,7 +84,7 @@ validation_losses = []
 for epoch in range(1, EPOCHS + 1):
     train_epoch_loss = []
     model.train()
-    random.shuffle(train_encoded) # Shuffle songs for each epoch
+    random.shuffle(train_encoded)  # Shuffle songs for each epoch
     for i, song_encoded in enumerate(train_encoded):
         optimizer.zero_grad()
 
@@ -106,7 +106,6 @@ for epoch in range(1, EPOCHS + 1):
             # Forward through model
             output = model(inputs_onehot.unsqueeze(1))  # Turn input into 3D (chunk_length, batch, vocab_size)
 
-            # Calculate
             output.squeeze_(1)  # Back to 2D
 
             loss += criterion(output, target.long())
@@ -156,8 +155,7 @@ for epoch in range(1, EPOCHS + 1):
         avg_val_songs_loss = sum(val_epoch_loss) / len(val_epoch_loss)
         validation_losses.append(avg_val_songs_loss)
 
-        print(
-            "Epoch {}, Training loss: {}, Validation Loss: {}".format(epoch, avg_train_songs_loss, avg_val_songs_loss))
+        print("Epoch {}, Training loss: {}, Validation Loss: {}".format(epoch, avg_train_songs_loss, avg_val_songs_loss))
 
 """
 Save Error plot
