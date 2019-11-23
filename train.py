@@ -1,4 +1,5 @@
 import math
+import random
 
 import torch
 from torch import optim
@@ -6,14 +7,8 @@ from torch.nn import CrossEntropyLoss
 
 from models import LSTMSimple
 from utils import SlidingWindowLoader, read_songs_from, char_mapping
-
-# Check if cuda is supported
-if torch.cuda.is_available():
-    print("CUDA supported")
-    computing_device = torch.device("cuda")
-else:
-    print("CUDA not supported")
-    computing_device = torch.device("cpu")
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def encode_songs(songs, char_to_idx):
@@ -50,15 +45,29 @@ def load_data(file):
     return songs, songs_encoded
 
 
-# Load Data
+"""
+Check for CUDA
+"""
+if torch.cuda.is_available():
+    print("CUDA supported")
+    computing_device = torch.device("cuda")
+else:
+    print("CUDA not supported")
+    computing_device = torch.device("cpu")
+
+"""
+Load Data
+"""
 char_to_idx, idx_to_char = char_mapping()
 
 train, train_encoded = load_data('train.txt')
 val, val_encoded = load_data('val.txt')
 
-# Initialize model
+"""
+Initialize Model
+"""
 VOCAB_SIZE = len(char_to_idx.keys())
-EPOCHS = 10
+EPOCHS = 3
 CHUNK_SIZE = 100
 
 model = LSTMSimple(VOCAB_SIZE, 100, VOCAB_SIZE)
@@ -67,12 +76,15 @@ model.to(computing_device)
 criterion = CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters())
 
+"""
+Train Model
+"""
 training_losses = []
 validation_losses = []
 for epoch in range(1, EPOCHS + 1):
-    print("Epoch", epoch)
     train_epoch_loss = []
     model.train()
+    random.shuffle(train_encoded) # Shuffle songs for each epoch
     for i, song in enumerate(train_encoded):
         optimizer.zero_grad()
         p = 0
@@ -157,4 +169,18 @@ for epoch in range(1, EPOCHS + 1):
         avg_val_songs_loss = sum(validation_song_losses) / len(validation_song_losses)
         validation_losses.append(avg_val_songs_loss)
 
-        print("Epoch {}, Training loss: {}, Validation Loss: {}".format(epoch, avg_train_songs_loss, avg_val_songs_loss))
+        print(
+            "Epoch {}, Training loss: {}, Validation Loss: {}".format(epoch, avg_train_songs_loss, avg_val_songs_loss))
+
+"""
+Save Error plot
+"""
+x = np.arange(1, len(training_losses) + 1, 1)
+plt.plot(x, training_losses, label="train loss")
+plt.plot(x, validation_losses, label="validation loss")
+plt.xlabel("Epoch")
+plt.ylabel("Cross Entropy Loss")
+plt.xticks(x)
+plt.title("Loss as a function of number of epochs")
+plt.legend()
+plt.savefig('loss-plot.png')
