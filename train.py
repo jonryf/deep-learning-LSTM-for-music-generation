@@ -1,9 +1,7 @@
 import math
-from random import shuffle
 
 import torch
 from torch import optim
-from torch.autograd import Variable
 from torch.nn import CrossEntropyLoss
 
 from models import LSTMSimple
@@ -34,7 +32,6 @@ def encode_songs(songs, char_to_idx):
         songs_encoded[i] = result
     return songs_encoded
 
-
 def to_onehot(t):
     """
     Take a list of indexes and return a one-hot encoded tensor
@@ -45,11 +42,16 @@ def to_onehot(t):
     inputs_onehot.scatter_(1, t.unsqueeze(1).long(), 1.0)  # Remember inputs is indexes, so must be integer
     return inputs_onehot
 
+def load_data(file):
+    songs = read_songs_from('data/' + file)
+    songs_encoded = encode_songs(songs, char_to_idx)
+    return songs, songs_encoded
 
 # Load Data
 char_to_idx, idx_to_char = char_mapping()
-songs = read_songs_from('data/train.txt')
-songs_encoded = encode_songs(songs, char_to_idx)
+
+train, train_encoded = load_data('train.txt')
+val, val_encoded = load_data('val.txt')
 
 # Initialize model
 VOCAB_SIZE = len(char_to_idx.keys())
@@ -60,12 +62,14 @@ model = LSTMSimple(VOCAB_SIZE, 100, VOCAB_SIZE)
 
 criterion = CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters())
+validation_losses = []
 
 for epoch in range(EPOCHS):
     print("Epoch", epoch)
     training_error = []
-    for i, song in enumerate(songs_encoded):
-        print("Song: ", i)
+    model.train()
+    for i, song in enumerate(train_encoded):
+        #print("Song: ", i)
         optimizer.zero_grad()
         p = 0
         n = math.ceil(len(song) / CHUNK_SIZE)
@@ -108,4 +112,45 @@ for epoch in range(EPOCHS):
     print("Training Error: ", sum(training_error) / len(training_error))
 
     with torch.no_grad():
-        pass  # TODO
+        model.eval()
+        validation_song_losses = []
+        for i, song in enumerate(val_encoded):
+            print("Song: ", i)
+            optimizer.zero_grad()
+            p = 0
+            n = math.ceil(len(song) / CHUNK_SIZE)
+            loss = 0
+
+            song_loss = 0
+
+            for mini in range(n):
+                if p + CHUNK_SIZE + 1 > len(song):
+                    inputs = song[p:-1]
+                    targets = song[p + 1:]
+                else:
+                    inputs = song[p:p + CHUNK_SIZE]
+                    targets = song[p + 1: p + CHUNK_SIZE + 1]
+                p += CHUNK_SIZE
+
+                # Skip if empty
+                if inputs.size()[0] == 0:
+                    continue
+
+                # One-hot chunk tensor
+                inputs_onehot = to_onehot(inputs)
+
+                # Forward through model
+                output = model(inputs_onehot.unsqueeze(1))  # Turn input into 3D (chunk_length, batch, vocab_size)
+
+                # Calculate
+                output.squeeze_(1)  # Back to 2D
+
+                song_loss += criterion(output, targets.long())
+
+            validation_song_losses.append(song_loss.item())
+        avg_val_loss = sum(validation_song_losses) / len(validation_song_losses)
+        validation_losses.append(avg_val_loss)
+
+        print('Epoch %d, Training loss: %.3d' % (epoch + 1, avg_val_loss))
+
+
