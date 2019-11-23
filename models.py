@@ -23,5 +23,5 @@ class LSTMSimple(nn.Module):
     def forward(self, sequence):
         lstm_out, self.h = self.lstm(sequence, self.h)
         out = self.output(lstm_out)
-        return out #F.log_softmax(out)
+        return out
 

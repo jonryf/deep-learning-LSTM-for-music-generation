@@ -68,6 +68,7 @@ for epoch in range(EPOCHS):
         n = math.ceil(len(song) / CHUNK_SIZE)
         loss = 0
         # Divide songs into chunks
+        model.init_h()
         for mini in range(n):
             if p + CHUNK_SIZE > len(song):
                 inputs = song[p:-1]
@@ -89,9 +90,11 @@ for epoch in range(EPOCHS):
 
             # Calculate
             output.squeeze_(1)  # Back to 2D
+
             loss += criterion(output, targets.long())
+
+        loss.backward(retain_graph=True)
         print(loss)
-        loss.backward()
         optimizer.step()
 
     with torch.no_grad():
