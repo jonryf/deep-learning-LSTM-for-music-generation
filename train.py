@@ -62,6 +62,7 @@ EPOCHS = 10
 CHUNK_SIZE = 100
 
 model = LSTMSimple(VOCAB_SIZE, 100, VOCAB_SIZE)
+model.to(computing_device)
 
 criterion = CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters())
