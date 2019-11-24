@@ -72,7 +72,6 @@ def predict(model, song):
 # This function takes the desired output length and input characters as arguments, returning the produced sentence
 def sample(model, song, limit):
     model.eval()
-    model.init_h(computing_device)
 
     i = 0
     while song[-1] != '%' and i < limit:
@@ -103,6 +102,7 @@ cd cB AG"""
 def main():
     model = LSTMSimple(VOCAB_SIZE, 100, VOCAB_SIZE)
     model.to(computing_device)
+    model.init_h(computing_device)
     model.load_state_dict(torch.load("C:\\Users\\MichaelT\\Desktop\\model2019-11-23-16-20.pth", map_location='cpu'))
     text = sample(model, MODEL_INPUT, 300)
     print(text)
