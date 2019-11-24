@@ -4,10 +4,11 @@ from torch.autograd import Variable
 from torch.nn.functional import softmax
 
 from models import LSTMSimple
-from utils import SlidingWindowLoader, read_songs_from, char_mapping
+from utils import char_mapping
 
 TEMPERATURE = 1
 TAKE_MAX_PROBABLE = False
+
 
 # This function takes in the model and character as arguments and returns the next character prediction and hidden state
 def predict(model, char):
