@@ -1,6 +1,6 @@
 import math
 import random
-
+import time
 import torch
 from torch import optim
 from torch.nn import CrossEntropyLoss
@@ -86,13 +86,11 @@ for epoch in range(1, EPOCHS + 1):
     model.train()
     random.shuffle(train_encoded)  # Shuffle songs for each epoch
     for i, song_encoded in enumerate(train_encoded):
-        optimizer.zero_grad()
-
         # Reset H for each song
         model.init_h(computing_device)
 
         loss = 0
-        n = 0
+        n = 0 # Number of chunks made from a song
         for seq, target in SlidingWindowLoader(song_encoded):
             n += 1
 
@@ -103,17 +101,21 @@ for epoch in range(1, EPOCHS + 1):
             # One-hot chunk tensor
             inputs_onehot = to_onehot(seq)
 
+            # Reset gradients for every forward
+            optimizer.zero_grad()
+
             # Forward through model
             output = model(inputs_onehot.unsqueeze(1))  # Turn input into 3D (chunk_length, batch, vocab_size)
 
             output.squeeze_(1)  # Back to 2D
 
-            loss += criterion(output, target.long())
+            chunk_loss = criterion(output, target.long())
+            loss.backward()
+            optimizer.step()
+            loss += chunk_loss
 
         avg_train_song_loss = loss.item() / n
         train_epoch_loss.append(avg_train_song_loss)  # Average loss over one song
-        loss.backward()
-        optimizer.step()
 
         if i % 100 == 0:
             print("Song: {}, AvgTrainLoss: {}".format(i, sum(train_epoch_loss) / len(train_epoch_loss)))
@@ -156,6 +158,15 @@ for epoch in range(1, EPOCHS + 1):
         validation_losses.append(avg_val_songs_loss)
 
         print("Epoch {}, Training loss: {}, Validation Loss: {}".format(epoch, avg_train_songs_loss, avg_val_songs_loss))
+
+
+"""
+Save Model
+"""
+t = time.time()
+PATH = "{}_LSTM.pth".format(t)
+torch.save(model.state_dict(), PATH)
+
 
 """
 Save Error plot
