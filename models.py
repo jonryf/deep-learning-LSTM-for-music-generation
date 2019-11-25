@@ -24,6 +24,7 @@ class LSTMSimple(nn.Module):
         self.h = (output, hidden)
 
     def forward(self, sequence):
+        self.h[0].detach_()
         self.h[1].detach_()
         lstm_out, self.h = self.lstm(sequence, self.h)
         out = self.output(lstm_out)
