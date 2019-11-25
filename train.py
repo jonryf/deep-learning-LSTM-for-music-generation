@@ -110,7 +110,7 @@ for epoch in range(1, EPOCHS + 1):
             output.squeeze_(1)  # Back to 2D
 
             chunk_loss = criterion(output, target.long())
-            loss.backward()
+            chunk_loss.backward()
             optimizer.step()
             loss += chunk_loss
 
