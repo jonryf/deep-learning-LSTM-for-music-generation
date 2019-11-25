@@ -10,7 +10,7 @@ char_to_idx, idx_to_char = char_mapping()
 VOCAB_SIZE = len(char_to_idx.keys())
 
 TEMPERATURE = 1
-TAKE_MAX_PROBABLE = True
+TAKE_MAX_PROBABLE = False
 
 if torch.cuda.is_available():
     print("CUDA supported")
@@ -103,7 +103,7 @@ def main():
     model = LSTMSimple(VOCAB_SIZE, 100, VOCAB_SIZE)
     model.to(computing_device)
     model.init_h(computing_device)
-    model.load_state_dict(torch.load("C:\\Users\\MichaelT\\Desktop\\model2019-11-23-16-20.pth", map_location='cpu'))
+    model.load_state_dict(torch.load("C:\\Users\\MichaelT\\PycharmProjects\\Deep-Learning-Assignment-4\\trained_models\\1574724927_3761547_LSTM.pth", map_location='cpu'))
     text = sample(model, MODEL_INPUT, 300)
     print(text)
 
