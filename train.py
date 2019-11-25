@@ -9,7 +9,7 @@ from models import LSTMSimple
 from utils import SlidingWindowLoader, read_songs_from, char_mapping
 import matplotlib.pyplot as plt
 import numpy as np
-
+from datetime import datetime
 
 def encode_songs(songs, char_to_idx):
     """
@@ -180,3 +180,11 @@ plt.xticks(x)
 plt.title("Loss as a function of number of epochs")
 plt.legend()
 plt.savefig('loss-plot.png')
+
+"""
+Save Model
+"""
+print("Saving model...")
+now = datetime.now().strftime('%Y-%m-%d-%H-%M')
+torch.save(model.state_dict(), "model" + now + ".pth")
+print("Saved!")
