@@ -5,7 +5,7 @@ import torch
 from torch import optim
 from torch.nn import CrossEntropyLoss
 
-from models import LSTMSimple
+from models import LSTMSimple, VanillaRNN
 from utils import SlidingWindowLoader, read_songs_from, char_mapping, encode_songs, to_onehot, check_cuda
 from generator import sample
 import matplotlib.pyplot as plt
@@ -17,6 +17,42 @@ def load_data(file):
     songs = read_songs_from('data/' + file)
     songs_encoded = encode_songs(songs, char_to_idx, computing_device)
     return songs, songs_encoded
+
+
+def negative_log_likelihood(model, encoded_data):
+    """
+    Average the cross entropy loss over all the chunks
+    :param model: nn.Module
+    :param encoded_data: List of encoded songs
+    :return:
+    """
+    print("Calculating Negative Log Likelihood...")
+    chunk_loss = 0
+    number_of_chunks = 0
+    with torch.no_grad():
+        model.eval()
+        for song_encoded in encoded_data:
+            # Reset H for each song
+            model.init_state(computing_device)
+
+            for seq, target in SlidingWindowLoader(song_encoded):
+                number_of_chunks += 1
+
+                # if chunk is empty
+                if len(seq) == 0:
+                    continue
+
+                # One-hot chunk tensor
+                inputs_onehot = to_onehot(seq, computing_device, VOCAB_SIZE)
+
+                # Forward through model
+                output = model(inputs_onehot.unsqueeze(1))  # Turn input into 3D (chunk_length, batch, vocab_size)
+
+                # Calculate
+                output.squeeze_(1)  # Back to 2D
+
+                chunk_loss += criterion(output, target.long())
+    return chunk_loss / number_of_chunks
 
 
 """
@@ -31,6 +67,7 @@ char_to_idx, idx_to_char = char_mapping()
 
 train, train_encoded = load_data('train.txt')
 val, val_encoded = load_data('val.txt')
+test, test_encoded = load_data('test.txt')
 
 """
 Initialize Model
@@ -39,7 +76,8 @@ VOCAB_SIZE = len(char_to_idx.keys())
 EPOCHS = 10
 CHUNK_SIZE = 100
 
-model = LSTMSimple(VOCAB_SIZE, 100, VOCAB_SIZE)
+# model = LSTMSimple(VOCAB_SIZE, 100, VOCAB_SIZE)
+model = VanillaRNN(VOCAB_SIZE, 100, VOCAB_SIZE)
 model.to(computing_device)
 
 criterion = CrossEntropyLoss()
@@ -56,7 +94,7 @@ for epoch in range(1, EPOCHS + 1):
     random.shuffle(train_encoded)  # Shuffle songs for each epoch
     for i, song_encoded in enumerate(train_encoded):
         # Reset H for each song
-        model.init_h(computing_device)
+        model.init_state(computing_device)
 
         loss = 0
         n = 0  # Number of chunks made from a song
@@ -105,7 +143,7 @@ for epoch in range(1, EPOCHS + 1):
 
         for i, song_encoded in enumerate(val_encoded):
             # Reset H for each song
-            model.init_h(computing_device)
+            model.init_state(computing_device)
 
             loss = 0
             n = 0
@@ -134,6 +172,14 @@ for epoch in range(1, EPOCHS + 1):
 
         print(
             "Epoch {}, Training loss: {}, Validation Loss: {}".format(epoch, avg_train_songs_loss, avg_val_songs_loss))
+
+"""
+Report NLL for validation and test
+"""
+nll_val = negative_log_likelihood(model, val_encoded)
+nll_test = negative_log_likelihood(model, test_encoded)
+print("NLL Validation: {}".format(nll_val))
+print("NLL Test: {}".format(nll_test))
 
 """
 Save Error plot
