@@ -36,7 +36,7 @@ val, val_encoded = load_data('val.txt')
 Initialize Model
 """
 VOCAB_SIZE = len(char_to_idx.keys())
-EPOCHS = 15
+EPOCHS = 10
 CHUNK_SIZE = 100
 
 model = LSTMSimple(VOCAB_SIZE, 100, VOCAB_SIZE)
@@ -93,7 +93,7 @@ for epoch in range(1, EPOCHS + 1):
     training_losses.append(avg_train_songs_loss)
 
     # Generate a song at this epoch
-    song = sample(model, "$", 300)
+    song = sample(model, "$", 300, computing_device)
     print("-" * 40)
     print(song)
     print("-" * 40)
