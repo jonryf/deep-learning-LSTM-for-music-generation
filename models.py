@@ -23,6 +23,7 @@ class LSTMSimple(nn.Module):
 
         # Model layout
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers)
+        self.drop = nn.Dropout(0.4)
         self.fc = nn.Linear(hidden_size, output_size)
         self.state = None
 
@@ -39,6 +40,7 @@ class LSTMSimple(nn.Module):
         self.state[0].detach_()
         self.state[1].detach_()
         lstm_out, self.state = self.lstm(sequence, self.state)
+        lstm_out = self.drop(lstm_out)
         return self.fc(lstm_out)
 
 
@@ -80,7 +82,7 @@ def fit(model, train_encoded, val_encoded, config):
     n_songs_val = len(val_encoded)
 
     criterion = nn.CrossEntropyLoss()
-    optimizer = Adam(model.parameters(), lr=config["LR"])
+    optimizer = Adam(model.parameters(), lr=config["LR"], weight_decay=config["WEIGHT_DECAY"])
 
     for epoch in range(1, config["EPOCHS"] + 1):
         train_loss = 0

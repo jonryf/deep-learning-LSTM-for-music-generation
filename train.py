@@ -22,7 +22,8 @@ config = {
     "EPOCHS": 2,
     "CHUNK_SIZE": 100,
     "VOCAB_SIZE": len(char_to_idx.keys()),
-    "LR": 0.001,  # Default in Adam 0.001
+    "LR": 0.001,  # Default in Adam 0.001,
+    "WEIGHT_DECAY": 0,  # Default in Adam 0
     "HIDDEN": 100,
 
     # For songs sampling
