@@ -136,13 +136,6 @@ for epoch in range(1, EPOCHS + 1):
             "Epoch {}, Training loss: {}, Validation Loss: {}".format(epoch, avg_train_songs_loss, avg_val_songs_loss))
 
 """
-Save Model
-"""
-t = time.time()
-PATH = "{}_LSTM.pth".format(t)
-torch.save(model.state_dict(), PATH)
-
-"""
 Save Error plot
 """
 x = np.arange(1, len(training_losses) + 1, 1)
