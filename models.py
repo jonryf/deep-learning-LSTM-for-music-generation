@@ -54,6 +54,7 @@ class VanillaRNN(nn.Module):
 
         # Model layout
         self.rnn = nn.RNN(input_size, hidden_size, num_layers)
+        self.drop = nn.Dropout(0.4)
         self.fc = nn.Linear(hidden_size, output_size)
         self.state = None
 
@@ -66,6 +67,7 @@ class VanillaRNN(nn.Module):
     def forward(self, sequence):
         self.state.detach_()
         out, self.state = self.rnn(sequence, self.state)
+        out = self.drop(out)
         return self.fc(out)
 
 

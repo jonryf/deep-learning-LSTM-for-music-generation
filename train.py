@@ -19,7 +19,7 @@ val, val_encoded = load_data('val.txt')
 test, test_encoded = load_data('test.txt')
 
 config = {
-    "EPOCHS": 2,
+    "EPOCHS": 15,
     "CHUNK_SIZE": 100,
     "VOCAB_SIZE": len(char_to_idx.keys()),
     "LR": 0.001,  # Default in Adam 0.001,
