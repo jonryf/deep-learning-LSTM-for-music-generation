@@ -30,12 +30,12 @@ config = {
     "TAKE_MAX_PROBABLE": False,
     "LIMIT_LEN": 300
 }
+print(config)
 
 # model = VanillaRNN(config["VOCAB_SIZE"], config["HIDDEN"], config["VOCAB_SIZE"]).to(get_device())
 model = LSTMSimple(config["VOCAB_SIZE"], config["HIDDEN"], config["VOCAB_SIZE"]).to(get_device())
 
 criterion = CrossEntropyLoss()
-optimizer = Adam(model.parameters())
 
 # Fit Model
 fit(model, train_encoded, val_encoded, config)
