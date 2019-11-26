@@ -138,7 +138,7 @@ def fit(model, train_encoded, val_encoded, config):
 
                 song_loss = 0
                 n = 0
-                for seq, target in SlidingWindowLoader(song):
+                for seq, target in SlidingWindowLoader(song, window=config["CHUNK_SIZE"]):
                     # Chunks is sometimes empty
                     if len(seq) == 0:
                         continue
@@ -167,9 +167,9 @@ def negative_log_likelihood(model, encoded_data, criterion, config):
     number_of_chunks = 0
     with torch.no_grad():
         model.eval()
-        for song_encoded in encoded_data:
+        for song in encoded_data:
             model.init_state()
-            for seq, target in SlidingWindowLoader(song_encoded):
+            for seq, target in SlidingWindowLoader(song, window=config["CHUNK_SIZE"]):
                 number_of_chunks += 1
                 if len(seq) == 0:
                     continue
