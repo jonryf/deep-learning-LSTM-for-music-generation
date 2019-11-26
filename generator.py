@@ -68,6 +68,6 @@ if __name__ == '__main__':
     model = LSTMSimple(VOCAB_SIZE, 100, VOCAB_SIZE)
     model.to(computing_device)
     model.init_h(computing_device)
-    model.load_state_dict(torch.load("trained_models/1574724927_3761547_LSTM.pth", map_location='cpu'))
+    model.load_state_dict(torch.load("trained_models/model2019-11-25-17-31.pth", map_location='cpu'))
     text = sample(model, MODEL_INPUT, 400, computing_device)
     print(text)
