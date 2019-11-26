@@ -6,54 +6,23 @@ from torch import optim
 from torch.nn import CrossEntropyLoss
 
 from models import LSTMSimple
-from utils import SlidingWindowLoader, read_songs_from, char_mapping
+from utils import SlidingWindowLoader, read_songs_from, char_mapping, encode_songs, to_onehot, check_cuda
+from generator import sample
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
 
-def encode_songs(songs, char_to_idx):
-    """
-    Return a list of encoded songs where each char in a song is mapped to an index as in char_to_idx
-    :param songs: List[String]
-    :param char_to_idx: Dict{char -> int}
-    :return: List[Tensor]
-    """
-    songs_encoded = [0] * len(songs)
-    for i, song in enumerate(songs):
-        chars = list(song)
-        result = torch.zeros(len(chars)).to(computing_device)
-        for j, ch in enumerate(chars):
-            result[j] = char_to_idx[ch]
-        songs_encoded[i] = result
-    return songs_encoded
-
-
-def to_onehot(t):
-    """
-    Take a list of indexes and return a one-hot encoded tensor
-    :param t: 1D Tensor of indexes
-    :return: 2D Tensor
-    """
-    inputs_onehot = torch.zeros(t.shape[0], VOCAB_SIZE).to(computing_device)
-    inputs_onehot.scatter_(1, t.unsqueeze(1).long(), 1.0)  # Remember inputs is indexes, so must be integer
-    return inputs_onehot
-
 
 def load_data(file):
     songs = read_songs_from('data/' + file)
-    songs_encoded = encode_songs(songs, char_to_idx)
+    songs_encoded = encode_songs(songs, char_to_idx, computing_device)
     return songs, songs_encoded
 
 
 """
 Check for CUDA
 """
-if torch.cuda.is_available():
-    print("CUDA supported")
-    computing_device = torch.device("cuda")
-else:
-    print("CUDA not supported")
-    computing_device = torch.device("cpu")
+computing_device = check_cuda()
 
 """
 Load Data
@@ -67,7 +36,7 @@ val, val_encoded = load_data('val.txt')
 Initialize Model
 """
 VOCAB_SIZE = len(char_to_idx.keys())
-EPOCHS = 15
+EPOCHS = 10
 CHUNK_SIZE = 100
 
 model = LSTMSimple(VOCAB_SIZE, 100, VOCAB_SIZE)
@@ -90,7 +59,7 @@ for epoch in range(1, EPOCHS + 1):
         model.init_h(computing_device)
 
         loss = 0
-        n = 0 # Number of chunks made from a song
+        n = 0  # Number of chunks made from a song
         for seq, target in SlidingWindowLoader(song_encoded):
             n += 1
 
@@ -99,7 +68,7 @@ for epoch in range(1, EPOCHS + 1):
                 continue
 
             # One-hot chunk tensor
-            inputs_onehot = to_onehot(seq)
+            inputs_onehot = to_onehot(seq, computing_device, VOCAB_SIZE)
 
             # Reset gradients for every forward
             optimizer.zero_grad()
@@ -123,6 +92,12 @@ for epoch in range(1, EPOCHS + 1):
     avg_train_songs_loss = sum(train_epoch_loss) / len(train_epoch_loss)  # Average loss overall songs
     training_losses.append(avg_train_songs_loss)
 
+    # Generate a song at this epoch
+    song = sample(model, "$", 300, computing_device)
+    print("-" * 40)
+    print(song)
+    print("-" * 40)
+
     with torch.no_grad():
         print("Validating...")
         model.eval()
@@ -142,7 +117,7 @@ for epoch in range(1, EPOCHS + 1):
                     continue
 
                 # One-hot chunk tensor
-                inputs_onehot = to_onehot(seq)
+                inputs_onehot = to_onehot(seq, computing_device, VOCAB_SIZE)
 
                 # Forward through model
                 output = model(inputs_onehot.unsqueeze(1))  # Turn input into 3D (chunk_length, batch, vocab_size)
@@ -157,16 +132,8 @@ for epoch in range(1, EPOCHS + 1):
         avg_val_songs_loss = sum(val_epoch_loss) / len(val_epoch_loss)
         validation_losses.append(avg_val_songs_loss)
 
-        print("Epoch {}, Training loss: {}, Validation Loss: {}".format(epoch, avg_train_songs_loss, avg_val_songs_loss))
-
-
-"""
-Save Model
-"""
-t = time.time()
-PATH = "{}_LSTM.pth".format(t)
-torch.save(model.state_dict(), PATH)
-
+        print(
+            "Epoch {}, Training loss: {}, Validation Loss: {}".format(epoch, avg_train_songs_loss, avg_val_songs_loss))
 
 """
 Save Error plot
