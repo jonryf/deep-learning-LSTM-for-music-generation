@@ -81,6 +81,7 @@ def char_mapping():
     text = text.replace("<start>", "$")
     text = text.replace("<end>", "%")
     chars = list(set(text))
+    chars.sort()  # To get the same order every time
     file.close()
 
     vocab_size = len(chars)
@@ -104,7 +105,9 @@ def read_songs_from(file_name):
 
 
 def main():
-    char_to_ix, ix_to_char = char_mapping()
-    print(char_to_ix)
+    for x in range(10):
+        char_to_ix, ix_to_char = char_mapping()
+        print(char_to_ix)
 
-# main()
+
+#main()

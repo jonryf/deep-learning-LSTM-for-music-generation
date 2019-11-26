@@ -14,9 +14,10 @@ TEMPERATURE = 1
 TAKE_MAX_PROBABLE = False
 
 
-def predict(model, song):
+def predict(model, song, computing_device):
     """
     This function takes in the model and character as arguments and returns the next character prediction and hidden state
+    :param computing_device: cpu or cuda
     :param model: nn.Module
     :param song: String
     :return:
@@ -38,9 +39,10 @@ def predict(model, song):
     return idx_to_char[char_ind]
 
 
-def sample(model, song, limit):
+def sample(model, song, limit, computing_device):
     """
     # This function takes the desired output length and input characters as arguments, returning the produced sentence
+    :param computing_device: cpu or cuda
     :param model: nn.Module
     :param song: String
     :param limit: Int
@@ -51,7 +53,7 @@ def sample(model, song, limit):
 
     i = 0
     while song[-1] != '%' and i < limit:
-        char = predict(model, song)
+        char = predict(model, song, computing_device)
         song += char
         i += 1
 
@@ -59,14 +61,13 @@ def sample(model, song, limit):
 
 
 if __name__ == '__main__':
-    computing_device = check_cuda()
-
     MODEL_INPUT = "$\nX:3"
     # MODEL_INPUT = "$"
+    computing_device = check_cuda()
 
     model = LSTMSimple(VOCAB_SIZE, 100, VOCAB_SIZE)
     model.to(computing_device)
     model.init_h(computing_device)
     model.load_state_dict(torch.load("trained_models/1574724927_3761547_LSTM.pth", map_location='cpu'))
-    text = sample(model, MODEL_INPUT, 400)
+    text = sample(model, MODEL_INPUT, 400, computing_device)
     print(text)
