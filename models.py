@@ -98,7 +98,7 @@ def fit(model, train_encoded, val_encoded, config):
 
             song_loss = 0
             n = 0  # Number of chunks made from song
-            for seq, target in SlidingWindowLoader(song):
+            for seq, target in SlidingWindowLoader(song, window=config["CHUNK_SIZE"]):
 
                 # Chunks is sometimes empty
                 if len(seq) == 0:
