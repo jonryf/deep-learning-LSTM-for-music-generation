@@ -16,7 +16,7 @@ TAKE_MAX_PROBABLE = False
 
 def predict(model, song, computing_device):
     """
-    This function takes in the model and character as arguments and returns the next character prediction and hidden state
+    This function takes in the model and character as arguments and returns the next character prediction and hidden state.
     :param computing_device: cpu or cuda
     :param model: nn.Module
     :param song: String
