@@ -7,6 +7,12 @@ from torch.nn.functional import softmax
 from models import LSTMSimple
 from utils import char_mapping, encode_songs, to_onehot, check_cuda
 
+char_to_idx, idx_to_char = char_mapping()
+VOCAB_SIZE = len(char_to_idx.keys())
+
+TEMPERATURE = 1
+TAKE_MAX_PROBABLE = False
+
 
 def predict(model, song):
     """
@@ -54,12 +60,6 @@ def sample(model, song, limit):
 
 if __name__ == '__main__':
     computing_device = check_cuda()
-
-    char_to_idx, idx_to_char = char_mapping()
-    VOCAB_SIZE = len(char_to_idx.keys())
-
-    TEMPERATURE = 1
-    TAKE_MAX_PROBABLE = False
 
     MODEL_INPUT = "$\nX:3"
     # MODEL_INPUT = "$"
