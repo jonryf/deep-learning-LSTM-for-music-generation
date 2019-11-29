@@ -32,9 +32,9 @@ class LSTMSimple(nn.Module):
 
     def init_state(self):
         computing_device = get_device()
-        cell = torch.zeros(1, 1, self.hidden_size).to(computing_device)
         hidden = torch.zeros(1, 1, self.hidden_size).to(computing_device)
-        self.state = (cell, hidden)
+        cell = torch.zeros(1, 1, self.hidden_size).to(computing_device)
+        self.state = (hidden, cell)
 
     def forward(self, sequence):
         self.state[0].detach_()
