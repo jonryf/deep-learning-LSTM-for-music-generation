@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 
-
 class LSTMSimple(nn.Module):
 
     def __init__(self, input_size, hidden_size, output_size, num_layers=1):
